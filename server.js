@@ -334,7 +334,6 @@ const server = createServer(async (req, res) => {
       return sendJSON(200, { status: 'OK', message: `Đã gán task thành công cho ${username}` });
 
     } catch (error) {
-      // >>> ĐÃ SỬA: catch error <<<
       return sendJSON(400, { status: 'Error', message: 'JSON không hợp lệ' });
     }
   }
@@ -344,7 +343,6 @@ const server = createServer(async (req, res) => {
     if (!user) return sendJSON(401, { status: 'Error', message: 'Token không hợp lệ (401)' });
 
     try {
-      // >>> ĐÃ SỬA: Dùng await thay vì .then <<<
       const { taskId } = await getRequestBody(req);
 
       if (!taskId) return sendJSON(400, { status: 'Error', message: 'Vui lòng cung cấp taskId để xoá' });
@@ -379,7 +377,6 @@ const server = createServer(async (req, res) => {
       return sendJSON(200, { status: 'OK', message: 'Đã xoá task thành công' });
 
     } catch (error) {
-      // >>> ĐÃ SỬA: catch error <<<
       return sendJSON(400, { status: 'Error', message: 'JSON không hợp lệ' });
     }
   }
