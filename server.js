@@ -49,8 +49,7 @@ function authenticateUser(req) {
 // ==========================================
 // KHỞI TẠO SERVER
 // ==========================================
-const server = createServer((req, res) => {
-  // >>> ĐÃ SỬA: Lấy phần path trước dấu '?' để chặn lỗi 404 khi có query string <<<
+const server = createServer(async (req, res) => {
   const reqPath = req.url.split('?')[0];
 
   const sendJSON = (statusCode, data) => {
@@ -76,9 +75,10 @@ const server = createServer((req, res) => {
   // ---------------------------------------------------------
   // NHÓM 1: AUTH (POST /sign-up, POST /login)
   // ---------------------------------------------------------
-  // Đổi req.url thành reqPath
   if (req.method === 'POST' && (reqPath === '/sign-up' || reqPath === '/login')) {
-    getRequestBody(req).then(({ username, password }) => {
+    try {
+      const { username, password } = await getRequestBody(req);
+
       if (!username || !password) return sendJSON(400, { status: 'Error', message: 'Thiếu username hoặc password' });
 
       if (reqPath === '/sign-up') {
@@ -142,7 +142,9 @@ const server = createServer((req, res) => {
 
         return sendJSON(401, { status: 'Error', message: 'Sai tên đăng nhập hoặc mật khẩu' });
       }
-    }).catch(() => sendJSON(400, { status: 'Error', message: 'JSON không hợp lệ' }));
+    } catch (error) {
+      return sendJSON(400, { status: 'Error', message: 'JSON không hợp lệ' });
+    }
   }
 
   // ---------------------------------------------------------
@@ -209,7 +211,9 @@ const server = createServer((req, res) => {
     const user = authenticateUser(req);
     if (!user) return sendJSON(401, { status: 'Error', message: 'Token không hợp lệ (401)' });
 
-    getRequestBody(req).then(({ title }) => {
+    try {
+      const { title } = await getRequestBody(req);
+
       if (!title) return sendJSON(400, { status: 'Error', message: 'Vui lòng cung cấp title cho task' });
 
       if (/[,\r\n]/.test(title)) {
@@ -229,7 +233,9 @@ const server = createServer((req, res) => {
       fs.appendFileSync(tasksDbFilePath, csvDataToAppend, 'utf8');
 
       return sendJSON(201, { status: 'OK', message: 'Tạo task thành công', data: { taskId, title } });
-    }).catch(() => sendJSON(400, { status: 'Error', message: 'JSON không hợp lệ' }));
+    } catch (error) {
+      return sendJSON(400, { status: 'Error', message: 'JSON không hợp lệ' });
+    }
   }
 
   else if (req.method === 'GET' && reqPath === '/tasks') {
@@ -253,7 +259,9 @@ const server = createServer((req, res) => {
     const user = authenticateUser(req);
     if (!user) return sendJSON(401, { status: 'Error', message: 'Token không hợp lệ (401)' });
 
-    getRequestBody(req).then(({ taskId, username }) => {
+    try {
+      const { taskId, username } = await getRequestBody(req);
+
       if (!taskId || !username) {
         return sendJSON(400, { status: 'Error', message: 'Thiếu taskId hoặc username' });
       }
@@ -325,14 +333,20 @@ const server = createServer((req, res) => {
       fs.writeFileSync(tasksDbFilePath, taskLines.join('\n'), 'utf8');
       return sendJSON(200, { status: 'OK', message: `Đã gán task thành công cho ${username}` });
 
-    }).catch(() => sendJSON(400, { status: 'Error', message: 'JSON không hợp lệ' }));
+    } catch (error) {
+      // >>> ĐÃ SỬA: catch error <<<
+      return sendJSON(400, { status: 'Error', message: 'JSON không hợp lệ' });
+    }
   }
 
   else if (req.method === 'DELETE' && reqPath === '/task') {
     const user = authenticateUser(req);
     if (!user) return sendJSON(401, { status: 'Error', message: 'Token không hợp lệ (401)' });
 
-    getRequestBody(req).then(({ taskId }) => {
+    try {
+      // >>> ĐÃ SỬA: Dùng await thay vì .then <<<
+      const { taskId } = await getRequestBody(req);
+
       if (!taskId) return sendJSON(400, { status: 'Error', message: 'Vui lòng cung cấp taskId để xoá' });
       if (!fs.existsSync(tasksDbFilePath)) return sendJSON(404, { status: 'Error', message: 'Chưa có dữ liệu task' });
 
@@ -364,7 +378,10 @@ const server = createServer((req, res) => {
       fs.writeFileSync(tasksDbFilePath, remainingLines.join('\n') + '\n', 'utf8');
       return sendJSON(200, { status: 'OK', message: 'Đã xoá task thành công' });
 
-    }).catch(() => sendJSON(400, { status: 'Error', message: 'JSON không hợp lệ' }));
+    } catch (error) {
+      // >>> ĐÃ SỬA: catch error <<<
+      return sendJSON(400, { status: 'Error', message: 'JSON không hợp lệ' });
+    }
   }
 
   // ---------------------------------------------------------
